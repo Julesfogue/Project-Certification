@@ -51,16 +51,7 @@ pipeline {
             }
         }
         stage('Stage 4') {
-            agent { docker 'devopsedu/webapp' }
-            steps {
-                git(
-                    url: 'git@github.com:Julesfogue/Project-Certification.git',
-                    credentialsId: 'f60dfa64-300b-4108-b181-30fdaeaa4a73',
-                    branch: "${branch}"
-                )
-            }
-        }
-        stage('Stage 5') {
+            agent { docker 'devopsedu/webapp' }            
             steps {                
                 sh "mvn clean"
             }
