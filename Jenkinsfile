@@ -1,78 +1,69 @@
-pipeline {
-    agent none 
-    stages {
-        stage('Stage 1') {
-            agent {
-                label 'Testing Node 1'
-            }
-            steps {
-                echo "Stage 1"
-                echo 'Installation and Configuration of Ansible in the slave node: Testing Node 1'
-                    sh '''#!/bin/bash
-                        yum update -y
-                        yum remove ansible -y
-                        rpm -q ansible
-                        yum install epel-release -y
-                        yum install ansible -y 
-                        ansible --version
-                    '''
-            }
-        }
-        stage('Stage 2') {
-            agent {
-                label 'Testing-Server'
-            }
-            steps {
-                echo "Stage 2"
-                echo 'Installation and Configuration of Ansible in the slave node: Testing-Server'
-                    sh '''#!/bin/bash
-                        sudo yum update -y
-                        yum remove ansible -y
-                        rpm -q ansible
-                        yum install epel-release -y
-                        yum install ansible -y 
-                        ansible --version
-                    '''
-            }
-        }    
-        stage('Stage 3') {
-            agent {
-                label 'master'
-            }
-            steps {
-                echo "Stage 3"
-                echo 'Installation and Configuration of Ansible in the slave node'
-                    sh '''#!/bin/bash
-                        sudo ansible all -m ping -u root
-                        sudo ansible all -m shell -a "yum install -y git"
-                        sudo ansible all -m shell -a "yum install -y chromedriver"
-                        sudo ansible all -m shell -a "yum install -y chromium"
-                    '''
-            }
-        }
-        stage('Stage 4') {
-            agent { docker 'devopsedu/webapp' }            
-            steps {                
-                sh "mvn clean"
-            }
-        }
-        stage('Stage 6') {
-            steps {
-                sh "mvn test"
-            }
-        }
-        stage('Stage 7') {
-            steps {
-                sh "mvn package"
-            }
-        }
+<?php
+
+/**
+ * Displays site name.
+ */
+function siteName()
+{
+    echo config('name');
+}
+
+/**
+ * Displays site version.
+ */
+function siteVersion()
+{
+    echo config('version');
+}
+
+/**
+ * Website navigation.
+ */
+function navMenu($sep = ' | ')
+{
+    $nav_menu = '';
+
+    foreach (config('nav_menu') as $uri => $name) {
+        $nav_menu .= '<a id="'.$name.'" href="/'.(config('pretty_uri') || $uri == '' ? '' : '?page=').$uri.'">'.$name.'</a>'.$sep;
     }
-    post {
-        success {
-            mail to: "jbfogue@gmail.com", subject:"SUCCESS: ${currentBuild.fullDisplayName}", body: "Yay, we passed."
-        }
-        failure {
-            mail to: "jbfogue@gmail.com", subject:"FAILURE: ${currentBuild.fullDisplayName}", body: "Boo, we failed."
-        }
+
+    echo trim($nav_menu, $sep);
+}
+
+/**
+ * Displays page title. It takes the data from 
+ * URL, it replaces the hyphens with spaces and 
+ * it capitalizes the words.
+ */
+function pageTitle()
+{
+    $page = isset($_GET['page']) ? htmlspecialchars($_GET['page']) : 'Home';
+
+    echo ucwords(str_replace('-', ' ', $page));
+}
+
+/**
+ * Displays page content. It takes the data from 
+ * the static pages inside the pages/ directory.
+ * When not found, display the 404 error page.
+ */
+function pageContent()
+{
+    $page = isset($_GET['page']) ? $_GET['page'] : 'home';
+
+    $path = getcwd().'/'.config('content_path').'/'.$page.'.php';
+
+    if (file_exists(filter_var($path, FILTER_SANITIZE_URL))) {
+        include $path;
+    } else {
+        include config('content_path').'/404.php';
     }
+}
+
+/**
+ * Starts everything and displays the template.
+ */
+function run()
+{
+    include config('template_path').'/template.php';
 }
